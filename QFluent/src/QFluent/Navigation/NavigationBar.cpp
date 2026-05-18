@@ -1,0 +1,403 @@
+﻿#include "NavigationBar.h"
+#include <QApplication>
+#include <QStyle>
+#include <QCursor>
+#include <QPainter>
+#include <QEvent>
+#include <QResizeEvent>
+#include <QMouseEvent>
+#include <QFont>
+#include <QVBoxLayout>
+#include <QMap>
+#include <QIcon>
+#include <QColor>
+
+#include "Theme.h"
+#include "StyleSheet.h"
+
+IconSlideAnimation::IconSlideAnimation(QWidget* parent)
+    : QPropertyAnimation(parent), m_offset(0), m_maxOffset(6) {
+    setTargetObject(this);
+    setPropertyName("offset");
+}
+
+float IconSlideAnimation::offset() const {
+    return m_offset;
+}
+
+void IconSlideAnimation::setOffset(float value) {
+    m_offset = value;
+    QWidget *parent = qobject_cast<QWidget*>(this->parent());
+    if (parent != nullptr)
+        parent->update();
+}
+
+void IconSlideAnimation::slideDown() {
+    setEndValue(m_maxOffset);
+    setDuration(100);
+    start();
+}
+
+void IconSlideAnimation::slideUp() {
+    setEndValue(0);
+    setDuration(100);
+    start();
+}
+
+QVariant IconSlideAnimation::animateValue(const QVariant& startValue, const QVariant& endValue, float progress) {
+    float start = startValue.toFloat();
+    float end = endValue.toFloat();
+    return QVariant(start + (end - start) * progress);
+}
+
+// NavigationBarPushButton 实现
+NavigationBarPushButton::NavigationBarPushButton(const QString& text, const QIcon& icon,
+                                                 Fluent::IconType iconType,
+                                                 bool isSelectable, QWidget* parent)
+    : NavigationPushButton(text, icon, isSelectable, parent)
+    , m_iconAni(new IconSlideAnimation(this))
+    , m_iconType(iconType)
+    , m_isSelectedTextVisible(true)
+    , m_lightSelectedColor(QColor())
+    , m_darkSelectedColor(QColor()) {
+
+    setFixedSize(64, 58);
+
+    setIndicatorColor(Theme::themeColor(Fluent::ThemeColor::PRIMARY), Theme::themeColor(Fluent::ThemeColor::PRIMARY));
+    Theme::setFont(this, 12);
+}
+
+void NavigationBarPushButton::setSelectedColor(const QColor& light, const QColor& dark) {
+    m_lightSelectedColor = light;
+    m_darkSelectedColor = dark;
+    update();
+}
+
+void NavigationBarPushButton::setSelectedTextVisible(bool isVisible) {
+    m_isSelectedTextVisible = isVisible;
+    update();
+}
+
+void NavigationBarPushButton::setSelected(bool isSelected) {
+    NavigationPushButton::setSelected(isSelected);
+    if (isSelected) {
+        m_iconAni->slideDown();
+    } else {
+        m_iconAni->slideUp();
+    }
+}
+
+void NavigationBarPushButton::paintEvent(QPaintEvent* e) {
+    QPainter painter(this);
+    painter.setRenderHints(QPainter::Antialiasing |
+                           QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
+    painter.setPen(Qt::NoPen);
+
+    drawBackground(painter);
+    drawIcon(painter);
+    drawText(painter);
+}
+
+void NavigationBarPushButton::drawBackground(QPainter& painter) {
+    if (property("isSelected").toBool()) {
+        QColor bg = Theme::isDark() ? QColor(255, 255, 255, 42) : Qt::white;
+        painter.setBrush(bg);
+        painter.drawRoundedRect(rect(), 5, 5);
+        // draw indicator
+        QColor indicatorColor = Theme::themeColor(Fluent::ThemeColor::PRIMARY);
+        if (!property("isPressed").toBool()) {
+            painter.setBrush(indicatorColor);
+            painter.drawRoundedRect(0, 16, 4, 24, 2, 2);
+        } else {
+            painter.setBrush(indicatorColor);
+            painter.drawRoundedRect(0, 19, 4, 18, 2, 2);
+        }
+    } else if (property("isPressed").toBool() || property("isEnter").toBool()) {
+        int c = Theme::isDark() ? 255 : 0;
+        int alpha = property("isEnter").toBool() ? 9 : 6;
+        painter.setBrush(QColor(c, c, c, alpha));
+        painter.drawRoundedRect(rect(), 5, 5);
+    }
+}
+
+void NavigationBarPushButton::drawIcon(QPainter& painter) {
+    if (property("isPressed").toBool() || (!property("isEnter").toBool() && !property("isSelected").toBool())) {
+        painter.setOpacity(0.6);
+    }
+    if (!isEnabled()) {
+        painter.setOpacity(0.4);
+    }
+
+    QRectF rect;
+    if (m_isSelectedTextVisible) {
+        rect = QRectF(22, 13, 20, 20);
+    } else {
+        rect = QRectF(22, 13 + m_iconAni->offset(), 20, 20);
+    }
+
+    if (property("isSelected").toBool()) {
+        QHash<QString, QString> attrs;
+        attrs["fill"] = Theme::themeColor(Fluent::ThemeColor::PRIMARY).name();
+
+        if (m_iconType != Fluent::IconType::NONE) {
+            FluentIcon fi(m_iconType);
+            FluentIconUtils::drawIcon(fi, &painter, rect, Fluent::ThemeMode::AUTO, false, attrs);
+        } else {
+            icon().paint(&painter, rect.toRect());
+        }
+    } else {
+        icon().paint(&painter, rect.toRect());
+    }
+}
+
+void NavigationBarPushButton::drawText(QPainter& painter) {
+    if (property("isSelected").toBool() && !m_isSelectedTextVisible) {
+        return;
+    }
+
+    QColor textColor = property("isSelected").toBool() ? Theme::themeColor(Fluent::ThemeColor::PRIMARY) : (Theme::isDark() ? Qt::white : Qt::black);
+    painter.setPen(textColor);
+    painter.setFont(font());
+    QRect rect(0, 32, width(), 26);
+    painter.drawText(rect, Qt::AlignCenter, text());
+}
+
+// NavigationBar 实现
+NavigationBar::NavigationBar(QWidget* parent)
+    : QWidget(parent),
+      m_scrollArea(new ScrollArea(this)),
+      m_scrollWidget(new QWidget(this)),
+      m_vBoxLayout(new QVBoxLayout(this)),
+      m_topLayout(new QVBoxLayout()),
+      m_bottomLayout(new QVBoxLayout()),
+      m_scrollLayout(new QVBoxLayout(m_scrollWidget)),
+      m_expandAni(new QPropertyAnimation(this, "minimumWidth", this)),
+      m_expandWidth(160),
+      m_isMinimalEnabled(false),
+      m_displayMode(NavigationPanel::DisplayMode::COMPACT),
+      m_isMenuButtonVisible(true),
+      m_isReturnButtonVisible(false),
+      m_isCollapsible(true),
+      m_isAcrylicEnabled(false) {
+
+    initWidget();
+}
+
+NavigationBar::~NavigationBar() = default;
+
+void NavigationBar::initWidget() {
+    this->setAttribute(Qt::WA_StyledBackground);
+
+    // 仅在已添加到窗口时安装事件过滤器
+    if (QWidget* wnd = this->window()) {
+        wnd->installEventFilter(this);
+    }
+
+    m_scrollWidget->setObjectName("scrollWidget");
+    m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scrollArea->setViewportMargins(0, 0, 0, 20);
+    m_scrollArea->setWidget(m_scrollWidget);
+    m_scrollArea->setWidgetResizable(true);
+
+    m_expandAni->setEasingCurve(QEasingCurve::OutQuad);
+    m_expandAni->setDuration(150);
+
+    // Initialize layouts
+    m_vBoxLayout->setContentsMargins(0, 5, 0, 5);
+    m_topLayout->setContentsMargins(4, 0, 4, 0);
+    m_bottomLayout->setContentsMargins(4, 0, 4, 0);
+    m_scrollLayout->setContentsMargins(4, 0, 4, 0);
+
+    m_vBoxLayout->setSpacing(4);
+    m_topLayout->setSpacing(4);
+    m_bottomLayout->setSpacing(4);
+    m_scrollLayout->setSpacing(4);
+
+    m_vBoxLayout->addLayout(m_topLayout, 0);
+    m_vBoxLayout->addWidget(m_scrollArea, 1);
+    m_vBoxLayout->addLayout(m_bottomLayout, 0);
+
+    m_vBoxLayout->setAlignment(Qt::AlignTop);
+    m_topLayout->setAlignment(Qt::AlignTop);
+    m_scrollLayout->setAlignment(Qt::AlignTop);
+    m_bottomLayout->setAlignment(Qt::AlignBottom);
+
+    // Register styles
+    StyleSheet::registerWidget(this, Fluent::ThemeStyle::NAVIGATION_INTERFACE);
+    StyleSheet::registerWidget(m_scrollWidget, Fluent::ThemeStyle::NAVIGATION_INTERFACE);
+}
+
+void NavigationBar::initLayout() {
+    // Layouts are initialized in initWidget()
+}
+
+NavigationWidget* NavigationBar::widget(const QString& routeKey) {
+    if (!m_items.contains(routeKey)) {
+        qWarning("NavigationBar::widget: Route key '%s' is not registered.", qPrintable(routeKey));
+        return nullptr;
+    }
+    return m_items[routeKey].widget;
+}
+
+void NavigationBar::addItem(const QString& routeKey, Fluent::IconType iconType, const QString& text,
+                            const std::function<void()>& onClick, bool selectable,
+                            NavigationPanel::ItemPosition position) {
+    insertItem(-1, routeKey, iconType, text, onClick, selectable, position);
+}
+
+void NavigationBar::addItem(const QString& routeKey, const QIcon& icon, const QString& text,
+                            const std::function<void()>& onClick, bool selectable,
+                            NavigationPanel::ItemPosition position) {
+    insertItem(-1, routeKey, icon, text, onClick, selectable, position);
+}
+
+void NavigationBar::addWidget(const QString& routeKey, NavigationWidget* widget,
+                              const std::function<void()>& onClick,
+                              NavigationPanel::ItemPosition position) {
+    insertWidget(-1, routeKey, widget, onClick, position);
+}
+
+void NavigationBar::insertItem(int index, const QString& routeKey, Fluent::IconType iconType, const QString& text,
+                               const std::function<void()>& onClick, bool selectable,
+                               NavigationPanel::ItemPosition position) {
+    if (m_items.contains(routeKey)) {
+        return;
+    }
+
+    NavigationBarPushButton* w = new NavigationBarPushButton(text, Fluent::icon(iconType), iconType, selectable, this);
+    w->setSelectedColor(m_lightSelectedColor, m_darkSelectedColor);
+    insertWidget(index, routeKey, w, onClick, position);
+}
+
+void NavigationBar::insertItem(int index, const QString& routeKey, const QIcon& icon, const QString& text,
+                               const std::function<void()>& onClick, bool selectable,
+                               NavigationPanel::ItemPosition position) {
+    if (m_items.contains(routeKey)) {
+        return;
+    }
+
+    NavigationBarPushButton* w = new NavigationBarPushButton(text, icon, Fluent::IconType::NONE, selectable, this);
+    w->setSelectedColor(m_lightSelectedColor, m_darkSelectedColor);
+    insertWidget(index, routeKey, w, onClick, position);
+}
+
+void NavigationBar::insertWidget(int index, const QString& routeKey, NavigationWidget* widget,
+                                 const std::function<void()>& onClick,
+                                 NavigationPanel::ItemPosition position) {
+    if (m_items.contains(routeKey)) {
+        return;
+    }
+
+    registerWidget(routeKey, widget, onClick);
+    insertWidgetToLayout(index, widget, position);
+}
+
+void NavigationBar::addSeparator(NavigationPanel::ItemPosition position) {
+    insertSeparator(-1, position);
+}
+
+void NavigationBar::insertSeparator(int index, NavigationPanel::ItemPosition position) {
+    NavigationSeparator* separator = new NavigationSeparator(this);
+    insertWidgetToLayout(index, separator, position);
+}
+
+void NavigationBar::registerWidget(const QString& routeKey, NavigationWidget* widget, const std::function<void()>& onClick) {
+    connect(widget, &NavigationWidget::clicked, this, &NavigationBar::onWidgetClicked);
+    if (onClick) {
+        connect(widget, &NavigationWidget::clicked, onClick);
+    }
+    widget->setProperty("routeKey", routeKey);
+    m_items[routeKey] = {routeKey, "", widget};
+}
+
+void NavigationBar::insertWidgetToLayout(int index, NavigationWidget* widget, NavigationPanel::ItemPosition position) {
+    if (position == NavigationPanel::ItemPosition::TOP) {
+        widget->setParent(this);
+        m_topLayout->insertWidget(index, widget, 0, Qt::AlignTop);
+    } else if (position == NavigationPanel::ItemPosition::SCROLL) {
+        widget->setParent(m_scrollWidget);
+        m_scrollLayout->insertWidget(index, widget, 0, Qt::AlignTop);
+    } else {
+        widget->setParent(this);
+        m_bottomLayout->insertWidget(index, widget, 0, Qt::AlignBottom);
+    }
+    widget->show();
+}
+
+void NavigationBar::removeWidget(const QString& routeKey) {
+    if (!m_items.contains(routeKey)) {
+        return;
+    }
+
+    NavigationItem item = m_items.take(routeKey);
+    item.widget->deleteLater();
+}
+
+void NavigationBar::setCurrentItem(const QString& routeKey) {
+    if (!m_items.contains(routeKey)) {
+        return;
+    }
+
+    for (auto it = m_items.constBegin(); it != m_items.constEnd(); ++it) {
+        it.value().widget->setSelected(it.key() == routeKey);
+    }
+}
+
+void NavigationBar::setFont(const QFont& font) {
+    QWidget::setFont(font);
+    const auto& btns = buttons();
+    for (NavigationBarPushButton* button : btns) {
+        button->setFont(font);
+    }
+}
+
+void NavigationBar::setSelectedTextVisible(bool isVisible) {
+    const auto& btns = buttons();
+    for (NavigationBarPushButton* button : btns) {
+        button->setSelectedTextVisible(isVisible);
+    }
+}
+
+void NavigationBar::setSelectedColor(const QColor& light, const QColor& dark) {
+    m_lightSelectedColor = light;
+    m_darkSelectedColor = dark;
+    const auto& btns = buttons();
+    for (NavigationBarPushButton* button : btns) {
+        button->setSelectedColor(light, dark);
+    }
+}
+
+QList<NavigationBarPushButton*> NavigationBar::buttons() const {
+    QList<NavigationBarPushButton*> result;
+    for (const auto& item : m_items) {
+        if (NavigationBarPushButton* button = qobject_cast<NavigationBarPushButton*>(item.widget)) {
+            result.append(button);
+        }
+    }
+    return result;
+}
+
+void NavigationBar::onWidgetClicked() {
+    NavigationWidget* widget = qobject_cast<NavigationWidget*>(sender());
+    if (!widget) {
+        return;
+    }
+    if (widget->property("isSelectable").toBool()) {
+        setCurrentItem(widget->property("routeKey").toString());
+    }
+}
+
+void NavigationBar::setWidgetCompacted(bool isCompacted) {
+    for (const auto& item : std::as_const(m_items)) {
+        item.widget->setCompacted(isCompacted);
+    }
+}
+
+void NavigationBar::paintEvent(QPaintEvent* e) {
+    QWidget::paintEvent(e);
+}
+
+bool NavigationBar::eventFilter(QObject* obj, QEvent* e) {
+    return QWidget::eventFilter(obj, e);
+}

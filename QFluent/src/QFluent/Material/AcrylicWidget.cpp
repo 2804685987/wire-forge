@@ -1,0 +1,116 @@
+﻿#include "AcrylicWidget.h"
+#include "AcrylicLabel.h"
+#include "Theme.h"
+
+#include <QPainter>
+#include <QPainterPath>
+#include <QColor>
+#include <QWidget>
+
+// ==================== AcrylicWidget 实现 ====================
+
+AcrylicWidget::AcrylicWidget(int blurRadius)
+    : m_acrylicBrush(nullptr)
+    , m_blurRadius(blurRadius)
+    , m_cachedTintColor(Qt::transparent)
+    , m_cachedLuminosityColor(Qt::transparent)
+{
+}
+
+AcrylicWidget::~AcrylicWidget() = default;
+
+AcrylicBrush* AcrylicWidget::acrylicBrush() const
+{
+    return m_acrylicBrush.get();
+}
+
+void AcrylicWidget::setBlurRadius(int radius)
+{
+    if (m_blurRadius == radius) {
+        return;
+    }
+
+    m_blurRadius = radius;
+
+    if (m_acrylicBrush) {
+        m_acrylicBrush->setBlurRadius(radius);
+    }
+}
+
+int AcrylicWidget::blurRadius() const
+{
+    return m_blurRadius;
+}
+
+void AcrylicWidget::initializeAcrylicBrush(QWidget *device,
+                                          const QColor &tintColor,
+                                          const QColor &luminosityColor,
+                                          double noiseOpacity)
+{
+    if (!device) {
+        return;
+    }
+
+    // 创建新的亚克力画刷实例
+    m_acrylicBrush = std::make_unique<AcrylicBrush>(
+        device,
+        m_blurRadius,
+        tintColor,
+        luminosityColor,
+        noiseOpacity
+    );
+}
+
+void AcrylicWidget::updateAcrylicColor()
+{
+    if (!m_acrylicBrush) {
+        return;
+    }
+
+    QColor tintColor;
+    QColor luminosityColor;
+
+    if (Theme::isDark()) {
+        tintColor = QColor(32, 32, 32, 200);
+        luminosityColor = QColor(0, 0, 0, 0);
+    } else {
+        tintColor = QColor(255, 255, 255, 180);
+        luminosityColor = QColor(255, 255, 255, 0);
+    }
+
+    // Only update if colors actually changed (avoid triggering widget->update() in paintEvent)
+    if (tintColor != m_cachedTintColor) {
+        m_cachedTintColor = tintColor;
+        m_acrylicBrush->setTintColor(tintColor);
+    }
+    if (luminosityColor != m_cachedLuminosityColor) {
+        m_cachedLuminosityColor = luminosityColor;
+        m_acrylicBrush->setLuminosityColor(luminosityColor);
+    }
+}
+
+QPainterPath AcrylicWidget::acrylicClipPath() const
+{
+    return QPainterPath();
+}
+
+void AcrylicWidget::drawAcrylic(QPainter *painter)
+{
+    if (!painter || !m_acrylicBrush) {
+        return;
+    }
+
+    // 获取裁剪路径
+    QPainterPath clipPath = acrylicClipPath();
+
+    // 如果裁剪路径非空，则设置到画刷
+    if (!clipPath.isEmpty()) {
+        m_acrylicBrush->setClipPath(clipPath);
+    }
+
+    // 更新亚克力颜色以适应当前主题
+    updateAcrylicColor();
+
+    // 执行亚克力绘制
+    m_acrylicBrush->paint();
+}

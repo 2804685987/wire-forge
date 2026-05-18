@@ -1,0 +1,36 @@
+#pragma once
+
+#include <QWidget>
+
+#include "FluentGlobal.h"
+
+class QMenu;
+class RoundMenu;
+class QEnterEvent;
+class QPaintEvent;
+class QListWidgetItem;
+
+class QFLUENT_EXPORT SubMenuItemWidget : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit SubMenuItemWidget(QMenu *menu, QListWidgetItem *item, QWidget *parent = nullptr);
+    explicit SubMenuItemWidget(RoundMenu *menu, QListWidgetItem *item, QWidget *parent = nullptr);
+
+signals:
+    void showMenuSig(QListWidgetItem *item);
+
+protected:
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    void enterEvent(QEnterEvent *event) override;
+#else
+    void enterEvent(QEvent *event) override;
+#endif
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    QMenu *m_menuAsQMenu;
+    RoundMenu *m_menuAsRoundMenu;
+    QListWidgetItem *m_item;
+};

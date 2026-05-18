@@ -1,0 +1,20 @@
+Copyright Notice
+================
+
+This project (QFluentKit) is a C++ port of PyQt-Fluent-Widgets
+(https://github.com/zhiyiYo/PyQt-Fluent-Widgets).
+
+Original work: PyQt-Fluent-Widgets by zhiyiYo, licensed under GPL-3.0
+C++ implementation and adaptations: toddming
+
+As a derivative work of PyQt-Fluent-Widgets, this project is licensed
+under the GNU General Public License v3.0 (GPL-3.0).
+
+The Fluent Design icons used in this project originate from the
+Microsoft Fluent UI System Icons, which are licensed under the MIT
+license by Microsoft Corporation.
+
+This project complies with the GPL-3.0 license terms, including:
+- Preserving the original license (GPL-3.0)
+- Providing attribution to the original project
+- Making source code available under the same license

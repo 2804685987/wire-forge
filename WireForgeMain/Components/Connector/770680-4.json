@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "Connector",
+  "partNumber": "770680-4",
+  "name": "770680-4",
+  "manufacturer": "TE Connectivity",
+  "sourceUrl": "https://www.te.com.cn/chn-zh/product-770680-4.html",
+  "description": "Connector component template generated for WireForgeMain. The official TE product page should be used to enrich detailed electrical/mechanical parameters.",
+  "properties": {
+	"category": "connector",
+	"series": "unknown",
+	"orientation": "unknown",
+	"mountingType": "unknown",
+	"gender": "unknown",
+	"color": "unknown",
+	"notes": "Offline-generated template. Fill with official TE product data when available."
+  },
+  "ports": [],
+  "compatibility": {
+	"terminalPartNumbers": [
+	  "770520-1"
+	],
+	"notes": "Compatible terminal list can be extended later."
+  },
+  "references": [
+	{
+	  "type": "productPage",
+	  "url": "https://www.te.com.cn/chn-zh/product-770680-4.html"
+	}
+  ],
+  "tags": ["TE", "Connector", "WireForge"]
+}

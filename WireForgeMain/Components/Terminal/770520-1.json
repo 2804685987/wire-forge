@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "kind": "Terminal",
+  "partNumber": "770520-1",
+  "name": "770520-1",
+  "manufacturer": "TE Connectivity",
+  "sourceUrl": "https://www.te.com.cn/chn-zh/product-770520-1.html?compatible=770680-4",
+  "description": "Terminal component template generated for WireForgeMain. The official TE product page should be used to enrich detailed electrical/mechanical parameters.",
+  "properties": {
+	"category": "terminal",
+	"series": "unknown",
+	"orientation": "unknown",
+	"mountingType": "unknown",
+	"color": "unknown",
+	"notes": "Offline-generated template. Fill with official TE product data when available."
+  },
+  "ports": [],
+  "compatibility": {
+	"connectorPartNumbers": [
+	  "770680-4"
+	],
+	"notes": "Compatible connector list can be extended later."
+  },
+  "references": [
+	{
+	  "type": "productPage",
+	  "url": "https://www.te.com.cn/chn-zh/product-770520-1.html?compatible=770680-4"
+	}
+  ],
+  "tags": ["TE", "Terminal", "WireForge"]
+}
