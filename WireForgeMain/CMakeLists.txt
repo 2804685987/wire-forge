@@ -1,25 +1,36 @@
-﻿cmake_minimum_required(VERSION 3.5)
+﻿cmake_minimum_required(VERSION 3.16)  # 建议提升到 3.16+，对 Qt6 更好
 project(WireForgeMain LANGUAGES CXX)
 
-# 支持Qt5和Qt6
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Svg Xml)
-
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# ==================== Qt 包查找 ====================
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
+        Core
+        Widgets
+        Gui
+        Svg
+        Xml
+        SerialPort     # DebugBlackBox 后续需要
+)
+
 set(BUILD_QWINDOWKIT ON)
 
-file(GLOB_RECURSE SOURCES
-    CONFIGURE_DEPENDS
-    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-    src/*.cpp
-    src/*.h
-        src/include/*.h
+# ==================== 自动扫描所有源码 ====================
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+        "src/*.cpp"
+        "src/*.h"
+        "src/include/*.h"
 )
+
 set(CPP_SOURCES "")
 set(HEADER_SOURCES "")
+
 foreach(file ${SOURCES})
     if(file MATCHES "\\.cpp$")
         list(APPEND CPP_SOURCES ${file})
@@ -28,60 +39,55 @@ foreach(file ${SOURCES})
     endif()
 endforeach()
 
-
-file(GLOB_RECURSE AUTO_RESOURCE_FILES
-    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-    res/*.png res/*.jpg res/*.jpeg res/*.gif res/*.svg res/*.ico res/*.ttf res/*.qss
+# ==================== 资源文件 ====================
+file(GLOB_RECURSE AUTO_RESOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+        res/*.png res/*.jpg res/*.jpeg res/*.gif res/*.svg
+        res/*.ico res/*.ttf res/*.qss
 )
 
-# 资源处理：兼容Qt5和Qt6
+# ==================== 可执行文件 ====================
 if(${QT_VERSION_MAJOR} EQUAL 6)
     add_executable(WireForgeMain
             MACOSX_BUNDLE
             ${CPP_SOURCES}
-        ${HEADER_SOURCES}
-        version.rc
+            ${HEADER_SOURCES}
+            version.rc
     )
-    qt_add_resources(WireForgeMain "WireForgeMain"
-        PREFIX "/"
-        FILES ${AUTO_RESOURCE_FILES}
-    )
+    qt_add_resources(WireForgeMain "WireForgeMain" PREFIX "/" FILES ${AUTO_RESOURCE_FILES})
 else()
     add_executable(WireForgeMain
-         MACOSX_BUNDLE
-        ${CPP_SOURCES}
-        ${HEADER_SOURCES}
-        version.rc
-        res/res.qrc
+            MACOSX_BUNDLE
+            ${CPP_SOURCES}
+            ${HEADER_SOURCES}
+            version.rc
+            res/res.qrc
     )
 endif()
 
-target_link_libraries(WireForgeMain PRIVATE QFluent)
-target_link_libraries(WireForgeMain
-    PRIVATE
+# ==================== 包含目录（重点新增） ====================
+target_include_directories(WireForgeMain PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/UI
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/View
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Model
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Controller
+
+)
+
+# ==================== 链接库 ====================
+target_link_libraries(WireForgeMain PRIVATE
+        QFluent
         Qt${QT_VERSION_MAJOR}::Core
         Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Svg
         Qt${QT_VERSION_MAJOR}::Xml
+        Qt${QT_VERSION_MAJOR}::SerialPort
 )
 
-target_include_directories(WireForgeMain PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-# 运行前将 Components 目录复制到可执行文件目录，便于运行时按相对路径自动发现组件 JSON
-add_custom_command(TARGET WireForgeMain POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/Components"
-        "$<TARGET_FILE_DIR:WireForgeMain>/Components"
-        COMMENT "Copying Components directory..."
-)
-
-
-if(WIN32 AND NOT BUILD_QWINDOWKIT)
-    target_link_libraries(WireForgeMain PRIVATE dwmapi)
-endif()
-
+# ==================== QWindowKit 支持 ====================
 if (BUILD_QWINDOWKIT)
     add_subdirectory(libs/qwindowkit)
     target_link_libraries(WireForgeMain PRIVATE QWindowKit::Widgets)
@@ -101,7 +107,6 @@ if (BUILD_QWINDOWKIT)
                 COMMENT "Copying QWindowKit DLLs..."
         )
 
-        # 复制 Qt 平台插件（解决 "no Qt platform plugin could be initialized" 错误）
         add_custom_command(TARGET WireForgeMain POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "${_qt_platforms_dir}"
@@ -111,4 +116,22 @@ if (BUILD_QWINDOWKIT)
     endif()
 else()
     target_compile_definitions(WireForgeMain PRIVATE USE_QWINDOWKIT=0)
+    if(WIN32)
+        target_link_libraries(WireForgeMain PRIVATE dwmapi)
+    endif()
+endif()
+
+# ==================== 复制 Components 目录 ====================
+add_custom_command(TARGET WireForgeMain POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/Components"
+        "$<TARGET_FILE_DIR:WireForgeMain>/Components"
+        COMMENT "Copying Components directory..."
+)
+
+# ==================== 编译警告 ====================
+if(MSVC)
+    target_compile_options(WireForgeMain PRIVATE /W4)
+else()
+    target_compile_options(WireForgeMain PRIVATE -Wall -Wextra -Wno-sign-compare)
 endif()

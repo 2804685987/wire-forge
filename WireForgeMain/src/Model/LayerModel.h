@@ -3,7 +3,7 @@
 #include <QObject>
 #include <QUuid>
 #include <QString>
-#include "Tools/PropertyBag.h"
+#include "Core/PropertyBag.h"
 
 /**
  * @brief LayerModel 表示画布上的一层（可见/锁定/顺序）

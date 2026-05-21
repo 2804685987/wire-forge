@@ -1,10 +1,10 @@
 #include <iostream>
 #include "MainWindow.h"
 #include "Router.h"
-#include "Window/FluentTitleBar.h"
+#include "UI/Window/FluentTitleBar.h"
 #include "QFluent/Dialog/MessageDialog.h"
-#include "Window/LoginWindow.h"
-#include "View/ProjectEditorWidget.h"
+#include "UI/Window/LoginWindow.h"
+#include "UI/ProjectEditorWidget.h"
 
 using FIT = Fluent::IconType;   // Fluent图标类型
 using NIP = NavigationPanel::ItemPosition;  // 导航栏项位置类型

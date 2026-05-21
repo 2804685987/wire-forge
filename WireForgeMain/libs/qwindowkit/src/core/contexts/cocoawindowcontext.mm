@@ -268,7 +268,7 @@ namespace QWK {
             };
             [leftButton setFrameOrigin:leftOrigin];
 
-            // Right button
+            // Attribute button
             NSPoint rightOrigin = {
                 centerOrigin.x + spacing,
                 centerOrigin.y,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Window/FluentWidget.h"
+#include "UI/Window/FluentWidget.h"
 #include "QFluent/StackedWidget.h"
 #include "QFluent/Navigation/NavigationPanel.h"
 #include "QFluent/Navigation/NavigationWidget.h"

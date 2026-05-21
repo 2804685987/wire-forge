@@ -2,7 +2,7 @@
 
 #include "Model/ProjectModel.h"
 #include "Controller/ProjectController.h"
-#include "Model/Components/ConnectorModel.h"
+#include "Graphics/ConnectorModel.h"
 
 
 #include <QPainter>

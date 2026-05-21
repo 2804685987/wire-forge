@@ -4,9 +4,9 @@
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QSet>
-#include "Tools/ProjectSerializer.h"
-#include "Components/ConnectorModel.h"
-#include "Components/BasicConnectorModel.h"
+#include "Core/ProjectSerializer.h"
+#include "Graphics/ConnectorModel.h"
+#include "Graphics/ConnectorItem.h"
 
 NodeModel::NodeModel(const QUuid &id, QObject *parent)
         : QObject(parent)

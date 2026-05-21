@@ -9,9 +9,9 @@ Standard: c++17
 # 指针和引用的对齐方式。
 # 可能的值有：
 # PAS_Left (在配置中： Left) 指针左对齐。
-# PAS_Right (在配置中： Right) 指针右对齐。
+# PAS_Right (在配置中： Attribute) 指针右对齐。
 # PAS_Middle (在配置中： Middle) 指针中间对齐。
-PointerAlignment: Right
+PointerAlignment: Attribute
 
 # public/protected/private 等访问修饰符偏移量
 AccessModifierOffset: -4

@@ -2,9 +2,9 @@
 
 #include "MainWindow.h"
 #include "Theme.h"
-#include "include/ConfigManager.h"
-#include "Model/Components/BasicConnectorModel.h"
-#include "Tools/ProjectSerializer.h"
+#include "Core/ConfigManager.h"
+#include "Graphics/BasicConnectorModel.h"
+#include "Core/ProjectSerializer.h"
 
 void RegisterDefaultConnectors()
 {

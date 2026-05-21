@@ -2,7 +2,8 @@
 
 project(WireForge VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_PREFIX_PATH "F:\\Qt\\6.7.0\\msvc2019_64")
+#set(CMAKE_PREFIX_PATH "F:\\Qt\\6.7.0\\msvc2019_64")
+set(CMAKE_PREFIX_PATH "C:\\Qt\\6.6.3\\msvc2019_64")
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)

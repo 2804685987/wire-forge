@@ -1,8 +1,8 @@
 #include "ProjectController.h"
 
 #include "Model/ProjectModel.h"
-#include "Model/Components/BasicConnectorModel.h"
-#include "Tools/ProjectSerializer.h"
+#include "Graphics/ConnectorItem.h"
+#include "Core/ProjectSerializer.h"
 
 #include <QDebug>
 #include <QUndoCommand>
