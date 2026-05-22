@@ -3,15 +3,9 @@
 #include "MainWindow.h"
 #include "Theme.h"
 #include "Core/ConfigManager.h"
-#include "Graphics/BasicConnectorModel.h"
 #include "Core/ProjectSerializer.h"
 
-void RegisterDefaultConnectors()
-{
-    ProjectSerializer::registerConnectorFactory(BasicConnectorModel::typeName(), [](QObject *parent) {
-        return new BasicConnectorModel(QString(), ConnectorModel::Input, parent);
-    });
-}
+// 删除了旧的 RegisterDefaultConnectors 函数和 BasicConnectorModel 头文件
 
 int main(int argc, char *argv[])
 {
@@ -32,7 +26,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setStyle("Fusion");
 
-    RegisterDefaultConnectors();
+    // 移除了这里的 RegisterDefaultConnectors();
 
     QFont font;
     font.setFamilies({"Microsoft YaHei", "PingFang SC", "Segoe UI"});

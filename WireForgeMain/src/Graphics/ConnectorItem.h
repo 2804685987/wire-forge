@@ -35,7 +35,10 @@ public:
     bool fromJson(const QJsonObject& obj) override;
 
 private:
+    void drawPorts(QPainter* painter) const; // 新增绘制端子的私有方法
+
     QList<ComponentPort*> m_ports;
     QList<SubComponentSlot*> m_subSlots;
     QSizeF m_size = QSizeF(120, 80);
+
 };

@@ -9,6 +9,8 @@
 #include <QAction>
 #include <QMessageBox>
 #include <QUndoStack>
+#include <QTimer>
+#include <QRandomGenerator>
 
 ProjectEditorWidget::ProjectEditorWidget(QWidget* parent) : QWidget(parent)
 {
@@ -79,7 +81,8 @@ void ProjectEditorWidget::setupConnections()
 void ProjectEditorWidget::addTestComponent()
 {
     auto connector = new ConnectorItem();
-    connector->setPos(100 + qrand() % 400, 100 + qrand() % 300);
+    connector->setPos(100 + QRandomGenerator::global()->bounded(400),
+                      100 + QRandomGenerator::global()->bounded(300));
     m_scene->addComponent(connector);
 
     m_view->centerOn(connector);

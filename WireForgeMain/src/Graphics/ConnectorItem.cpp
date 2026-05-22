@@ -168,3 +168,15 @@ bool ConnectorItem::fromJson(const QJsonObject& obj)
     // 后续实现 ports 和 subSlots 的反序列化
     return true;
 }
+void ConnectorItem::drawPorts(QPainter* painter) const
+{
+    // 简单的端子绘制逻辑 (占位实现，让端子显示为一个绿色小方块)
+    painter->setBrush(Qt::green);
+    painter->setPen(Qt::black);
+    for (auto port : m_ports) {
+        // 假设端子是一个 10x10 的小方块
+        QRectF portRect(port->localPos().x() - 5, port->localPos().y() - 5, 10, 10);
+        painter->drawRect(portRect);
+    }
+}
+

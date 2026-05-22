@@ -6,7 +6,7 @@
 
 class HarnessComponent;
 class ComponentPort;
-class SubComponentSlot;
+struct SubComponentSlot;
 
 class PropertyPanel : public QWidget
 {

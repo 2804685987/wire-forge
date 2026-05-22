@@ -63,4 +63,8 @@ protected:
     QString m_partNumber;
     QMap<QString, QVariant> m_customProperties;
     bool m_simplifiedMode = false;
+
+    // 添加以下两个绘制辅助方法的声明：
+    void drawSelectionFrame(QPainter* painter) const;
+    void drawSimplified(QPainter* painter) const;
 };
